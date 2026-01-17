@@ -1,6 +1,12 @@
 "use server";
 
-import { createRoom, getRoom, joinRoom, updateRoom } from "@/libs/firestore";
+import {
+  createRoom,
+  getRoom,
+  joinRoom,
+  updateRoom,
+  confirmTurnResult,
+} from "@/libs/firestore";
 import { GameRoom, Player, Round } from "@/types/room";
 import { isSuccessfulGetRoomResponse, plainRoundData } from "@/utils/room";
 import { cookies } from "next/headers";
@@ -190,61 +196,52 @@ export async function changeTurnAction({
   roomId: string;
   userId: string;
 }) {
-  const room = await getRoom(roomId);
-  if (!isSuccessfulGetRoomResponse(room)) {
-    return { status: room.status, error: room.error };
-  }
-
-  const round = room.data.round;
-
-  if (round.result.confirmedIds.length === 0) {
-    round.result.confirmedIds.push(userId);
-    round.result.shownResult = true;
-
-    const res = await updateRoom(roomId, { round });
-
-    if (res.status !== 200) {
-      return { status: res.status, error: res.error };
-    }
-    return { status: res.status, room: res.data as GameRoom };
-  }
-
-  if (round.result.confirmedIds.includes(userId)) {
-    return { status: 403, error: "すでに確認済みです" };
-  }
-
-  if (
-    round.result.confirmedIds.length === 1 &&
-    !round.result.confirmedIds.includes(userId)
-  ) {
-    const playerIds = [userId, round.result.confirmedIds[0]];
-    const nextAttackerId = playerIds.find((id) => id !== round.attackerId);
-
-    let data = {};
-    if (round.turn === "top") {
-      data = {
+  const res = await confirmTurnResult(roomId, userId, (round, confirmedIds) => {
+    if (confirmedIds.length === 1) {
+      // 最初の確認: 結果表示フラグを立てて待機
+      return {
         round: {
-          ...plainRoundData.round,
-          attackerId: nextAttackerId,
-          turn: "bottom",
-          count: round.count,
-        },
-      };
-    } else {
-      data = {
-        round: {
-          ...plainRoundData.round,
-          attackerId: nextAttackerId,
-          turn: "top",
-          count: round.count + 1,
+          ...round,
+          result: {
+            ...round.result,
+            confirmedIds,
+            shownResult: true,
+          },
         },
       };
     }
-    const res = await updateRoom(roomId, data);
-    if (res.status !== 200) {
-      return { status: res.status, error: res.error };
+
+    if (confirmedIds.length === 2) {
+      // 2人目の確認: 次のラウンドへ
+      const nextAttackerId =
+        confirmedIds.find((id) => id !== round.attackerId) ?? confirmedIds[0];
+
+      if (round.turn === "top") {
+        return {
+          round: {
+            ...plainRoundData.round,
+            attackerId: nextAttackerId,
+            turn: "bottom" as const,
+            count: round.count,
+          },
+        };
+      } else {
+        return {
+          round: {
+            ...plainRoundData.round,
+            attackerId: nextAttackerId,
+            turn: "top" as const,
+            count: round.count + 1,
+          },
+        };
+      }
     }
-    return { status: res.status, room: res.data as GameRoom };
+
+    return null;
+  });
+
+  if (res.status !== 200) {
+    return { status: res.status, error: res.error };
   }
-  return { status: 400, error: "不正なリクエストです" };
+  return { status: res.status, room: res.data };
 }

@@ -1,6 +1,13 @@
 "use server";
 
-import { getDoc, doc, updateDoc, onSnapshot, setDoc } from "firebase/firestore";
+import {
+  getDoc,
+  doc,
+  updateDoc,
+  onSnapshot,
+  setDoc,
+  runTransaction,
+} from "firebase/firestore";
 import { customAlphabet } from "nanoid";
 import { getFirestoreApp } from "@/libs/firestore/config";
 import { GameRoom, RoomResponse } from "@/types/room";
@@ -133,4 +140,56 @@ const createRoomId = async () => {
     return createRoomId();
   }
   return newId;
+};
+
+export const confirmTurnResult = async (
+  roomId: string,
+  userId: string,
+  getNextRoundData: (
+    currentRound: GameRoom["round"],
+    confirmedUserIds: string[]
+  ) => Partial<GameRoom> | null
+): Promise<
+  | { status: 200; data: GameRoom }
+  | { status: 403 | 400 | 404 | 500; error: string }
+> => {
+  const db = await getFirestoreApp();
+  const docRef = doc(db, "rooms", roomId);
+
+  try {
+    const result = await runTransaction(db, async (transaction) => {
+      const docSnap = await transaction.get(docRef);
+      if (!docSnap.exists()) {
+        return { status: 404 as const, error: "Room not found" };
+      }
+
+      const room = docSnap.data() as GameRoom;
+      const round = room.round;
+
+      if (round.result.confirmedIds.includes(userId)) {
+        return { status: 403 as const, error: "すでに確認済みです" };
+      }
+
+      const newConfirmedIds = [...round.result.confirmedIds, userId];
+      const nextData = getNextRoundData(round, newConfirmedIds);
+
+      if (nextData === null) {
+        return { status: 400 as const, error: "不正なリクエストです" };
+      }
+
+      transaction.update(docRef, nextData);
+
+      return {
+        status: 200 as const,
+        data: { ...room, ...nextData } as GameRoom,
+      };
+    });
+
+    return result;
+  } catch (e) {
+    if (e instanceof Error) {
+      return { status: 500, error: e.message };
+    }
+    return { status: 500, error: "ターン確認に失敗しました" };
+  }
 };
