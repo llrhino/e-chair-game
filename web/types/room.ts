@@ -30,6 +30,29 @@ export type GameRoom = {
   winnerId: string | null; // ゲーム終了時の勝者情報（ゲーム中はnull）
 };
 
+export type CpuPersonality =
+  | "chicken"
+  | "gambler"
+  | "analyst"
+  | "mirror"
+  | "revenger"
+  | "hunter"
+  | "trickster";
+
+export const CPU_DISPLAY_NAMES: Record<CpuPersonality, string> = {
+  chicken: "ヒヨリ",
+  gambler: "カケル",
+  analyst: "リクト",
+  mirror: "マネミ",
+  revenger: "ヤイバ",
+  hunter: "サグル",
+  trickster: "イタズ",
+} as const;
+
+export type CpuGameRoom = GameRoom & {
+  cpuDisplayName: string;
+};
+
 export type RoomResponse =
   | { status: 200; data: GameRoom }
   | { status: 404; error: string }

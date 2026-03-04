@@ -1,4 +1,4 @@
-import { GameRoom, RoomResponse } from "@/types/room";
+import { CpuGameRoom, GameRoom, RoomResponse } from "@/types/room";
 
 export const plainRoundData: Pick<GameRoom, "round"> = {
   round: {
@@ -20,4 +20,19 @@ export const isSuccessfulGetRoomResponse = (
   room: RoomResponse
 ): room is { status: 200; data: GameRoom } => {
   return room.status === 200;
+};
+
+const isCpuGameRoom = (
+  roomData: GameRoom | CpuGameRoom
+): roomData is CpuGameRoom => {
+  return "cpuDisplayName" in roomData;
+};
+
+export const getOpponentLabel = (
+  roomData: GameRoom | CpuGameRoom
+): string => {
+  if (isCpuGameRoom(roomData)) {
+    return roomData.cpuDisplayName;
+  }
+  return "相手";
 };
