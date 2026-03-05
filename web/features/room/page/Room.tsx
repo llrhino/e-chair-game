@@ -96,6 +96,7 @@ export default function Room({
   useEffect(() => {
     const chair = submittedChairRef.current;
     if (!chair || selectState.status === 0) return;
+    submittedChairRef.current = null;
     const message =
       selectState.status === 200
         ? "番の椅子を選択しました。"
