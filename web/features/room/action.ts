@@ -7,8 +7,9 @@ import {
   updateRoom,
   confirmTurnResult,
 } from "@/libs/firestore";
-import { GameRoom, Player, Round } from "@/types/room";
-import { isSuccessfulGetRoomResponse, plainRoundData } from "@/utils/room";
+import { GameRoom, Round } from "@/types/room";
+import { isSuccessfulGetRoomResponse } from "@/utils/room";
+import { applyActivation, applyChangeTurn } from "./logic/gameLogic";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -124,64 +125,14 @@ export async function activateAction(roomId: string) {
     return { status: room.status, error: room.error };
   }
 
-  const { players, round } = room.data;
-  const isShocked = round.electricChair === round.seatedChair;
+  const updatedRoom = applyActivation(room.data);
 
-  // isShocked が true の場合、attackerId のプレイヤーの shockedCount を +1 する
-  // isShockedでないばあい、attackerId のプレイヤーの point を seatedChair の値だけ増やす
-  const updatedPlayers = players.map((player) => {
-    if (player.id === round.attackerId) {
-      return {
-        ...player,
-        point: isShocked ? 0 : player.point + (round.seatedChair || 0),
-        shockedCount: isShocked ? player.shockedCount + 1 : player.shockedCount,
-      };
-    }
-    return player;
+  const res = await updateRoom(roomId, {
+    players: updatedRoom.players,
+    remainingChairs: updatedRoom.remainingChairs,
+    winnerId: updatedRoom.winnerId,
+    round: updatedRoom.round,
   });
-
-  // shockedでない場合、remainingChairs から seatedChair を削除する
-  const remainingChairs = isShocked
-    ? room.data.remainingChairs
-    : room.data.remainingChairs.filter((chair) => chair !== round.seatedChair);
-
-  // 勝敗判定
-  let winnerId = null;
-  const attackerId = round.attackerId;
-  const defenderId = room.data.players.find(
-    (player) => player.id !== attackerId
-  )?.id;
-  if (updatedPlayers.some((player) => player.point >= 40)) {
-    winnerId = round.attackerId;
-  } else if (updatedPlayers.some((player) => player.shockedCount === 3)) {
-    winnerId = defenderId;
-  } else if (remainingChairs.length === 1) {
-    const winner = updatedPlayers.reduce((prev, current) => {
-      if (current.point > prev.point) {
-        return current;
-      } else if (current.point === prev.point) {
-        return { id: "draw" } as Player;
-      }
-      return prev;
-    });
-    winnerId = winner.id;
-  }
-
-  const data: Partial<GameRoom> = {
-    players: updatedPlayers,
-    remainingChairs,
-    winnerId,
-    round: {
-      ...round,
-      phase: "result",
-      result: {
-        ...round.result,
-        status: isShocked ? "shocked" : "safe",
-      },
-    },
-  };
-
-  const res = await updateRoom(roomId, data);
 
   if (res.status !== 200) {
     return { status: res.status, error: res.error };
@@ -212,29 +163,18 @@ export async function changeTurnAction({
     }
 
     if (confirmedIds.length === 2) {
-      // 2人目の確認: 次のラウンドへ
-      const nextAttackerId =
-        confirmedIds.find((id) => id !== round.attackerId) ?? confirmedIds[0];
-
-      if (round.turn === "top") {
-        return {
-          round: {
-            ...plainRoundData.round,
-            attackerId: nextAttackerId,
-            turn: "bottom" as const,
-            count: round.count,
-          },
-        };
-      } else {
-        return {
-          round: {
-            ...plainRoundData.round,
-            attackerId: nextAttackerId,
-            turn: "top" as const,
-            count: round.count + 1,
-          },
-        };
-      }
+      // 2人目の確認: 純粋関数で次のラウンドへ遷移
+      const tempRoom = {
+        players: confirmedIds.map((id) => ({
+          id,
+          point: 0,
+          shockedCount: 0,
+          ready: true,
+        })),
+        round,
+      } as GameRoom;
+      const nextState = applyChangeTurn(tempRoom);
+      return { round: nextState.round };
     }
 
     return null;
