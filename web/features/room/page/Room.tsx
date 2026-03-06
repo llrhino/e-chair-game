@@ -116,7 +116,10 @@ export default function Room({
   };
 
   const handleChangeTurn = async () => {
-    changeTurn(closeTurnResultModal, () => setSelectedChair(null));
+    changeTurn(() => {
+      closeTurnResultModal();
+      setSelectedChair(null);
+    });
   };
 
   const isAllReady = () => {
