@@ -18,6 +18,7 @@ export function useRoomEffect({
   playSafeEffect,
   showGameResultModal,
   showTurnResultModal,
+  opponentLabel,
 }: {
   roomData: GameRoom | null;
   userId: string;
@@ -33,6 +34,7 @@ export function useRoomEffect({
   playSafeEffect: () => void;
   showGameResultModal: () => void;
   showTurnResultModal: () => void;
+  opponentLabel?: string;
 }) {
   useEffect(() => {
     if (!roomData) return;
@@ -60,13 +62,14 @@ export function useRoomEffect({
       }
 
       if (roomData.round.phase === "sitting" && isAttacker) {
-        RoomPhaseHandlers.handleSittingPhase(showNoticeModal, closeNoticeModal);
+        RoomPhaseHandlers.handleSittingPhase(showNoticeModal, closeNoticeModal, opponentLabel);
       }
     }
     if (roomData.round.phase === "activating" && isDefender) {
       RoomPhaseHandlers.handleActivatingPhase(
         showNoticeModal,
-        handleSubmitActivate
+        handleSubmitActivate,
+        opponentLabel
       );
     }
     if (
