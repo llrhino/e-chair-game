@@ -9,6 +9,7 @@ type TurnResultDialogProps = {
   previousRoomData: GameRoom;
   userId: string;
   close: () => void;
+  opponentLabel?: string;
 };
 
 export function TurnResultDialog({
@@ -17,6 +18,7 @@ export function TurnResultDialog({
   previousRoomData,
   userId,
   close,
+  opponentLabel,
 }: TurnResultDialogProps) {
   const isAttacker = roomData?.round?.attackerId === userId;
   const isShocked = roomData?.round?.result.status === "shocked";
@@ -78,7 +80,7 @@ export function TurnResultDialog({
             </div>
           </div>
           <p className="pt-1 text-xl font-semibold text-gray-300">
-            {roomData?.round?.attackerId === userId ? "あなたの" : "相手の"}
+            {roomData?.round?.attackerId === userId ? "あなたの" : `${opponentLabel ?? "相手"}の`}
             スコアが更新されました
           </p>
           <div className="flex gap-8">

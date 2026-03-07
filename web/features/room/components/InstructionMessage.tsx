@@ -9,13 +9,16 @@ type InstructionMessageProps = {
   };
   round: Round | undefined;
   userId: string | null;
+  opponentLabel?: string;
 };
 
 export function InstructionMessage({
   playerOperation,
   round,
   userId,
+  opponentLabel,
 }: InstructionMessageProps) {
+  const label = opponentLabel ?? "相手";
   const getInstruction = () => {
     if (playerOperation.setElectricShock) {
       return "電流を仕掛ける椅子を選んでください";
@@ -25,10 +28,10 @@ export function InstructionMessage({
     }
     if (playerOperation.wait) {
       if (round?.phase === "setting") {
-        return "相手が電流を仕掛けています。。。";
+        return `${label}が電流を仕掛けています。。。`;
       }
       if (round?.phase === "sitting") {
-        return "相手が座る椅子を選んでいます。。。";
+        return `${label}が座る椅子を選んでいます。。。`;
       }
       if (round?.phase === "activating") {
         if (round?.attackerId === userId) {
