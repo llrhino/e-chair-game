@@ -23,11 +23,13 @@ function handleSettingPhase(
 
 function handleSittingPhase(
   showNoticeModal: ShowNoticeModalFn,
-  closeNoticeModal: () => void
+  closeNoticeModal: () => void,
+  opponentLabel?: string
 ) {
+  const label = opponentLabel ?? "相手";
   showNoticeModal(
     {
-      title: "相手が電気椅子を仕掛けました",
+      title: `${label}が電気椅子を仕掛けました`,
       message: "座る椅子を選択してください",
       button: { label: "OK", action: () => closeNoticeModal() },
     },
@@ -37,10 +39,12 @@ function handleSittingPhase(
 
 function handleActivatingPhase(
   showNoticeModal: ShowNoticeModalFn,
-  submitActivate: () => void
+  submitActivate: () => void,
+  opponentLabel?: string
 ) {
+  const label = opponentLabel ?? "相手";
   showNoticeModal({
-    title: "相手が椅子に座りました",
+    title: `${label}が椅子に座りました`,
     message: "電流を起動してください",
     button: { label: "起動", action: () => submitActivate() },
   });
