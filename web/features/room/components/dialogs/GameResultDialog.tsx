@@ -8,6 +8,8 @@ type GameResultDialogProps = {
   roomData: GameRoom;
   userId: string;
   close: () => void;
+  onRetry?: () => void;
+  opponentLabel?: string;
 };
 
 export function GameResultDialog({
@@ -15,6 +17,8 @@ export function GameResultDialog({
   roomData,
   userId,
   close,
+  onRetry,
+  opponentLabel,
 }: GameResultDialogProps) {
   const isWinner = roomData?.winnerId === userId;
   const isDraw = roomData?.winnerId === "draw";
@@ -42,22 +46,23 @@ export function GameResultDialog({
 
   const getWinningCondition = () => {
     if (opponentStatus === undefined || myStatus === undefined) return "";
+    const label = opponentLabel ?? "相手";
     if (isWinner) {
       if (myStatus!.point >= 40) {
         return "40ポイント以上獲得しました";
       } else if (opponentStatus!.shockedCount === 3) {
-        return "相手が3回感電しました";
+        return `${label}が3回感電しました`;
       }
       return "獲得ポイントで上回りました";
     } else if (isDraw) {
       return "合計獲得ポイントが同じでした";
     } else {
       if (opponentStatus!.point >= 40) {
-        return "相手が40ポイント以上獲得しました";
+        return `${label}が40ポイント以上獲得しました`;
       } else if (myStatus!.shockedCount === 3) {
         return "3回感電しました";
       }
-      return "相手が獲得ポイントで上回りました";
+      return `${label}が獲得ポイントで上回りました`;
     }
   };
 
@@ -97,7 +102,7 @@ export function GameResultDialog({
               </div>
             </div>
             <div className="flex flex-col items-center">
-              <div className="text-white font-bold text-md">相手のスコア</div>
+              <div className="text-white font-bold text-md">{opponentLabel ?? "相手"}のスコア</div>
               <div className="text-gray-400">獲得ポイント</div>
               <div className="font-bold text-green-500 text-4xl">
                 {opponentStatus?.point}
@@ -109,9 +114,20 @@ export function GameResultDialog({
             </div>
           </div>
         </div>
-        <Button onClick={close} bgColor={bgColor}>
-          ゲーム終了
-        </Button>
+        {onRetry ? (
+          <div className="flex flex-col gap-2 w-full">
+            <Button onClick={onRetry} bgColor={bgColor}>
+              もういちど
+            </Button>
+            <Button onClick={close} bgColor="bg-gray-600">
+              トップにもどる
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={close} bgColor={bgColor}>
+            ゲーム終了
+          </Button>
+        )}
       </div>
     </dialog>
   );
