@@ -33,14 +33,18 @@ export function HistoryDialog({
             {history.map((entry, index) => {
               const attackerLabel =
                 entry.attackerId === userId ? "自分" : opponentLabel ?? "相手";
+              const seatedLabel =
+                entry.attackerId === userId ? opponentLabel ?? "相手" : "自分";
               return (
                 <li
                   key={`${entry.roundCount}-${entry.turn}-${index}`}
                   className="rounded-md border border-gray-600 bg-gray-900/70 p-3 text-sm"
                 >
                   <div className="font-semibold text-gray-100">
-                    {entry.roundCount}回 {getTurnLabel(entry.turn)} ({attackerLabel}
-                    攻撃)
+                    {entry.roundCount}回 {getTurnLabel(entry.turn)}
+                  </div>
+                  <div className="text-gray-300">
+                    電気を仕掛けた側: {attackerLabel} / 座った側: {seatedLabel}
                   </div>
                   <div className="text-gray-300">
                     電気椅子: {entry.electricChair} / 座った椅子: {entry.seatedChair}
