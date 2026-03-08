@@ -13,6 +13,7 @@ import { RoundStatus } from "@/features/room/components/RoundStatus";
 import { StartTurnDialog } from "@/features/room/components/dialogs/StartTurnDialog";
 import { GameResultDialog } from "@/features/room/components/dialogs/GameResultDialog";
 import { TurnResultDialog } from "@/features/room/components/dialogs/TurnResultDialog";
+import { HistoryDialog } from "@/features/room/components/dialogs/HistoryDialog";
 
 import { InstructionMessage } from "@/features/room/components/InstructionMessage";
 import { ActivateEffect } from "@/features/room/components/ActivateEffect";
@@ -36,6 +37,7 @@ import {
   resetTricksterState,
 } from "@/features/cpu-room/logic/cpuPlayer";
 import type { CpuPersonality } from "@/types/room";
+import { History } from "lucide-react";
 
 const PLAYER_ID = "player";
 const SESSION_KEY = "cpuLastPersonality";
@@ -86,6 +88,7 @@ function CpuRoomInner({
   useRecordCpuResult(gameRoom, personality);
   const [showShock, setShowShock] = useState<"" | "shock" | "safe">("");
   const previousRoomDataRef = useRef(gameRoom);
+  const historyDialogRef = useRef<HTMLDialogElement | null>(null);
 
   // activatingフェーズに入ったら、その時点のstateをpreviousとして保存
   // (result遷移後のTurnResultDialogでスコア変化前後を表示するため)
@@ -169,9 +172,27 @@ function CpuRoomInner({
     selectChair();
   };
 
+  const openHistoryDialog = () => {
+    historyDialogRef.current?.showModal();
+  };
+
+  const closeHistoryDialog = () => {
+    historyDialogRef.current?.close();
+  };
+
   return (
     <RoomContainer>
       <GameStatusContainer>
+        <div className="flex justify-end">
+          <div className="w-32">
+            <Button type="button" onClick={openHistoryDialog} bgColor="bg-sky-600">
+              <span className="inline-flex items-center gap-1">
+                <History className="h-4 w-4" />
+                ヒストリー
+              </span>
+            </Button>
+          </div>
+        </div>
         <RoundStatus round={gameRoom.round} userId={PLAYER_ID} />
         <PlayerStatusContainer>
           <PlayerStatus
@@ -244,6 +265,13 @@ function CpuRoomInner({
         userId={PLAYER_ID}
         close={toTop}
         onRetry={onRetry}
+        opponentLabel={opponentLabel}
+      />
+      <HistoryDialog
+        dialogRef={historyDialogRef}
+        history={gameRoom.history}
+        userId={PLAYER_ID}
+        close={closeHistoryDialog}
         opponentLabel={opponentLabel}
       />
       <ActivateEffect result={showShock} />
