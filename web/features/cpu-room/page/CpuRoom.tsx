@@ -30,6 +30,7 @@ import { useRoomEffect } from "@/features/room/hooks/useRoomEffect";
 import { useCpuGame } from "@/features/cpu-room/hooks/useCpuGame";
 import { useCpuAutoPlay } from "@/features/cpu-room/hooks/useCpuAutoPlay";
 import { useCpuRoomActions } from "@/features/cpu-room/hooks/useCpuRoomActions";
+import { useRecordCpuResult } from "@/features/cpu-room/hooks/useRecordCpuResult";
 import {
   pickRandomPersonality,
   resetTricksterState,
@@ -82,6 +83,7 @@ function CpuRoomInner({
   const toast = useToast();
 
   const { gameRoom, dispatch } = useCpuGame(personality);
+  useRecordCpuResult(gameRoom, personality);
   const [showShock, setShowShock] = useState<"" | "shock" | "safe">("");
   const previousRoomDataRef = useRef(gameRoom);
 
