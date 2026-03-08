@@ -1,6 +1,6 @@
 "use server";
 
-import { addDoc, collection, doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
+import { collection, doc, increment, serverTimestamp, writeBatch } from "firebase/firestore";
 import { getFirestoreApp } from "./config";
 import type { CpuPersonality } from "@/types/room";
 
@@ -33,8 +33,11 @@ export async function recordCpuBattleResult({
     const cpuResult: BattleResult =
       result === "win" ? "lose" : result === "lose" ? "win" : "draw";
 
+    const batch = writeBatch(db);
+
     // 1. 個別記録（プレイヤー視点）
-    await addDoc(collection(db, "cpuBattleResults"), {
+    const resultRef = doc(collection(db, "cpuBattleResults"));
+    batch.set(resultRef, {
       result,
       personality,
       playerScore,
@@ -45,7 +48,7 @@ export async function recordCpuBattleResult({
     });
 
     // 2. 全体集計カウンター（CPU視点）
-    await setDoc(
+    batch.set(
       doc(db, "cpuBattleStats", "total"),
       {
         [cpuResult]: increment(1),
@@ -55,13 +58,15 @@ export async function recordCpuBattleResult({
     );
 
     // 3. パーソナリティ別集計カウンター（CPU視点）
-    await setDoc(
+    batch.set(
       doc(db, "cpuBattleStats", `personality_${personality}`),
       {
         [cpuResult]: increment(1),
       },
       { merge: true }
     );
+
+    await batch.commit();
   } catch (error) {
     console.error("[cpuBattleStats] Failed to record result:", error);
   }
