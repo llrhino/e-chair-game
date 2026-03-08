@@ -4,6 +4,7 @@ import {
   CpuPersonality,
   CPU_DISPLAY_NAMES,
   GameRoom,
+  TurnHistory,
 } from "@/types/room";
 import { plainRoundData } from "@/utils/room";
 import { applyActivation, applyChangeTurn } from "@/features/room/logic/gameLogic";
@@ -16,6 +17,32 @@ export type CpuGameAction =
   | { type: "ACTIVATE" }
   | { type: "SHOW_RESULT" }
   | { type: "CHANGE_TURN" };
+
+export function buildTurnHistoryEntry(
+  previousState: CpuGameRoom,
+  activatedState: CpuGameRoom
+): TurnHistory | null {
+  const result = activatedState.round.result.status;
+
+  if (
+    activatedState.round.phase !== "result" ||
+    previousState.round.phase === "result" ||
+    (result !== "shocked" && result !== "safe") ||
+    previousState.round.electricChair === null ||
+    previousState.round.seatedChair === null
+  ) {
+    return null;
+  }
+
+  return {
+    roundCount: previousState.round.count,
+    turn: previousState.round.turn,
+    attackerId: previousState.round.attackerId,
+    electricChair: previousState.round.electricChair,
+    seatedChair: previousState.round.seatedChair,
+    result,
+  };
+}
 
 // ─── Reducer ───
 
@@ -43,7 +70,15 @@ export function cpuGameReducer(
         },
       };
     case "ACTIVATE":
-      return applyActivation(state) as CpuGameRoom;
+      const activatedState = applyActivation(state) as CpuGameRoom;
+      const historyEntry = buildTurnHistoryEntry(state, activatedState);
+      if (!historyEntry) {
+        return activatedState;
+      }
+      return {
+        ...activatedState,
+        history: [...state.history, historyEntry],
+      };
     case "SHOW_RESULT":
       return {
         ...state,
@@ -84,6 +119,7 @@ export function createInitialCpuRoom(personality: CpuPersonality): CpuGameRoom {
   return {
     ...baseRoom,
     cpuDisplayName: CPU_DISPLAY_NAMES[personality],
+    history: [],
   };
 }
 
