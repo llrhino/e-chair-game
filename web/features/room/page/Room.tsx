@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TooltipRefProps } from "react-tooltip";
 import useSound from "use-sound";
+import { History } from "lucide-react";
 
 import { useToast } from "@/utils/toast/useToast";
+import { getOpponentLabel } from "@/utils/room";
 
 import { Chair } from "@/features/room/components/Chair";
 import { PlayerStatus } from "@/features/room/components/PlayerStatus";
@@ -14,8 +16,9 @@ import { CreaterWaitingStartDialog } from "@/features/room/components/dialogs/Cr
 import { StartTurnDialog } from "@/features/room/components/dialogs/StartTurnDialog";
 import { GameResultDialog } from "@/features/room/components/dialogs/GameResultDialog";
 import { TurnResultDialog } from "@/features/room/components/dialogs/TurnResultDialog";
+import { HistoryDialog } from "@/features/room/components/dialogs/HistoryDialog";
 
-import type { GameRoom } from "@/types/room";
+import type { GameRoom, TurnHistory } from "@/types/room";
 import { InstructionMessage } from "@/features/room/components/InstructionMessage";
 import { ActivateEffect } from "@/features/room/components/ActivateEffect";
 import { RoomContainer } from "@/features/room/components/RoomContainer";
@@ -48,8 +51,11 @@ export default function Room({
   const userId = initialData.userId;
   const roomId = initialData.roomId;
   const [showShock, setShowShock] = useState<"" | "shock" | "safe">("");
+  const [history, setHistory] = useState<TurnHistory[]>([]);
   const tooltipRef = useRef<TooltipRefProps | null>(null);
   const previousRoomDataRef = useRef<GameRoom | null>(null);
+  const historyDialogRef = useRef<HTMLDialogElement | null>(null);
+  const addedHistoryTurnKeysRef = useRef<Set<string>>(new Set());
   const {
     NoticeDialogRef,
     noticeDialogState,
@@ -111,6 +117,38 @@ export default function Room({
     );
   }, [selectState, toast]);
 
+  useEffect(() => {
+    if (!roomData) return;
+    const result = roomData.round.result.status;
+
+    if (
+      roomData.round.phase !== "result" ||
+      (result !== "shocked" && result !== "safe") ||
+      roomData.round.electricChair === null ||
+      roomData.round.seatedChair === null
+    ) {
+      return;
+    }
+
+    const turnKey = `${roomData.round.count}-${roomData.round.turn}`;
+    if (addedHistoryTurnKeysRef.current.has(turnKey)) return;
+
+    const electricChair = roomData.round.electricChair;
+    const seatedChair = roomData.round.seatedChair;
+    addedHistoryTurnKeysRef.current.add(turnKey);
+    setHistory((prev) => [
+      ...prev,
+      {
+        roundCount: roomData.round.count,
+        turn: roomData.round.turn,
+        attackerId: roomData.round.attackerId,
+        electricChair,
+        seatedChair,
+        result,
+      },
+    ]);
+  }, [roomData]);
+
   const handleSubmitActivate = () => {
     submitActivate(closeNoticeModal);
   };
@@ -134,6 +172,14 @@ export default function Room({
     router.push("/");
   };
 
+  const openHistoryDialog = () => {
+    historyDialogRef.current?.showModal();
+  };
+
+  const closeHistoryDialog = () => {
+    historyDialogRef.current?.close();
+  };
+
   useRoomEffect({
     roomData,
     userId: userId!,
@@ -151,9 +197,21 @@ export default function Room({
     showTurnResultModal,
   });
 
+  const opponentLabel = roomData ? getOpponentLabel(roomData) : "相手";
+
   return (
     <RoomContainer>
       <GameStatusContainer>
+        <div className="flex justify-end">
+          <div className="w-32">
+            <Button type="button" onClick={openHistoryDialog} bgColor="bg-sky-600">
+              <span className="inline-flex items-center gap-1">
+                <History className="h-4 w-4" />
+                ヒストリー
+              </span>
+            </Button>
+          </div>
+        </div>
         <RoundStatus round={roomData?.round} userId={userId} />
         <PlayerStatusContainer>
           <PlayerStatus
@@ -229,6 +287,13 @@ export default function Room({
         roomData={roomData!}
         userId={userId!}
         close={toToP}
+      />
+      <HistoryDialog
+        dialogRef={historyDialogRef}
+        history={history}
+        userId={userId!}
+        close={closeHistoryDialog}
+        opponentLabel={opponentLabel}
       />
       <ActivateEffect result={showShock} />
     </RoomContainer>
