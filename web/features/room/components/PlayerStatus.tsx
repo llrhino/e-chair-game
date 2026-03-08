@@ -4,11 +4,12 @@ import { Skull } from "lucide-react";
 type PlayerStatusProps = {
   userId: string | null;
   status: Player | undefined;
+  opponentLabel?: string;
 };
 
-export function PlayerStatus({ userId, status }: PlayerStatusProps) {
+export function PlayerStatus({ userId, status, opponentLabel }: PlayerStatusProps) {
   const playerStatus = status;
-  const playerName = status?.id === userId ? "あなた" : "相手";
+  const playerName = status?.id === userId ? "あなた" : (opponentLabel ?? "相手");
 
   return (
     <div className="p-6 bg-gray-700 text-center rounded-lg">

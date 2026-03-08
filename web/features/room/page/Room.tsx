@@ -91,8 +91,12 @@ export default function Room({
     playerOperation,
   });
 
+  const submittedChairRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (!selectedChair) return;
+    const chair = submittedChairRef.current;
+    if (!chair || selectState.status === 0) return;
+    submittedChairRef.current = null;
     const message =
       selectState.status === 200
         ? "番の椅子を選択しました。"
@@ -100,20 +104,22 @@ export default function Room({
     toast.open(
       <span>
         <span style={{ color: "red", fontWeight: "bold", fontSize: "1.2rem" }}>
-          {selectedChair}
+          {chair}
         </span>
         {message}
       </span>
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectState]);
+  }, [selectState, toast]);
 
   const handleSubmitActivate = () => {
     submitActivate(closeNoticeModal);
   };
 
   const handleChangeTurn = async () => {
-    changeTurn(closeTurnResultModal, () => setSelectedChair(null));
+    changeTurn(() => {
+      closeTurnResultModal();
+      setSelectedChair(null);
+    });
   };
 
   const isAllReady = () => {
@@ -160,7 +166,12 @@ export default function Room({
           />
         </PlayerStatusContainer>
       </GameStatusContainer>
-      <form action={selectChair}>
+      <form
+        action={selectChair}
+        onSubmit={() => {
+          submittedChairRef.current = selectedChair;
+        }}
+      >
         <ChairContainer>
           {roomData?.remainingChairs.map((chair) => (
             <Chair
