@@ -49,8 +49,18 @@ export const CPU_DISPLAY_NAMES: Record<CpuPersonality, string> = {
   trickster: "イタズ",
 } as const;
 
+export type TurnHistory = {
+  roundCount: number;
+  turn: "top" | "bottom";
+  attackerId: string;
+  electricChair: number;
+  seatedChair: number;
+  result: "shocked" | "safe";
+};
+
 export type CpuGameRoom = GameRoom & {
   cpuDisplayName: string;
+  history: TurnHistory[];
 };
 
 export type RoomResponse =
