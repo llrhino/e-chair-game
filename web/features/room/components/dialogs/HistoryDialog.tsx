@@ -39,29 +39,27 @@ export function HistoryDialog({
         ? entry.result === "safe"
         : entry.result === "shocked";
 
-      const actionLabel = isAttacker ? "座る椅子を選択" : "電気を仕掛ける椅子を選択";
       const chair = isAttacker ? entry.seatedChair : entry.electricChair;
-      const actorLabel = isSelfTab ? selfLabel : rivalLabel;
       const roleLabel = isAttacker ? "座った側" : "仕掛けた側";
       const roleStyle = isAttacker
         ? "bg-sky-500/20 text-sky-200 border-sky-400/40"
         : "bg-orange-500/20 text-orange-200 border-orange-400/40";
-      const actionStyle = isAttacker ? "text-sky-300" : "text-orange-300";
       const chairStyle = isAttacker
         ? "border-sky-500/50 bg-sky-950/40 text-sky-200"
         : "border-orange-500/50 bg-orange-950/40 text-orange-200";
+      const resultStyle = didSucceed
+        ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
+        : "bg-red-500/20 text-red-300 border-red-400/40";
 
       return {
         key: `${entry.roundCount}-${entry.turn}-${index}`,
         roundLabel: `${entry.roundCount}回 ${getTurnLabel(entry.turn)}`,
-        actorLabel,
         roleLabel,
         roleStyle,
-        actionStyle,
-        actionLabel,
         chair,
         chairStyle,
         didSucceed,
+        resultStyle,
       };
     });
   }, [activeTab, history, rivalLabel, userId]);
@@ -102,44 +100,30 @@ export function HistoryDialog({
               {entries.map((entry) => (
                 <li
                   key={entry.key}
-                  className="rounded-md border border-gray-600 bg-gray-900/70 p-3"
+                  className="rounded-md border border-gray-600 bg-gray-900/70 p-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-100">{entry.roundLabel}</div>
+                  <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm">
+                    <div className="min-w-fit font-semibold text-gray-100">{entry.roundLabel}</div>
                     <div
-                      className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        entry.didSucceed
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-red-500/20 text-red-300"
-                      }`}
+                      className={`min-w-fit rounded-full border px-2 py-1 text-xs font-bold ${entry.roleStyle}`}
                     >
-                      {entry.didSucceed ? "成功" : "失敗"}
+                      {entry.roleLabel}
                     </div>
-                  </div>
-                  <div className="mt-2 rounded border border-gray-600/80 bg-gray-950/50 p-2 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <div
-                        className={`rounded-full border px-2 py-1 text-xs font-bold ${entry.roleStyle}`}
-                      >
-                        {entry.roleLabel}
-                      </div>
-                      <div className={`text-xs font-semibold ${entry.actionStyle}`}>
-                        {entry.actionLabel}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center gap-1 font-semibold text-gray-100">
-                      {entry.actionLabel === "座る椅子を選択" ? (
+                    <div
+                      className={`inline-flex min-w-fit items-center gap-1 rounded-md border px-2 py-1 ${entry.chairStyle}`}
+                    >
+                      {entry.roleLabel === "座った側" ? (
                         <Shield className="h-4 w-4" />
                       ) : (
                         <Zap className="h-4 w-4" />
                       )}
-                      {entry.actorLabel}
+                      <span className="text-[11px]">椅子</span>
+                      <span className="text-lg font-black leading-none">{entry.chair}</span>
                     </div>
                     <div
-                      className={`mt-2 inline-flex items-baseline gap-1 rounded-md border px-2 py-1 ${entry.chairStyle}`}
+                      className={`min-w-fit rounded-full border px-2 py-1 text-xs font-bold ${entry.resultStyle}`}
                     >
-                      <span className="text-[11px]">選択した椅子</span>
-                      <span className="text-xl font-black leading-none">{entry.chair}</span>
+                      結果: {entry.didSucceed ? "成功" : "失敗"}
                     </div>
                   </div>
                 </li>
