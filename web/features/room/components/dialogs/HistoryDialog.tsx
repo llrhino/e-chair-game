@@ -1,7 +1,6 @@
 import { InfoDialog } from "@/components/dialogs/InfoDialog";
 import { Button } from "@/components/buttons/Button";
 import { TurnHistory } from "@/types/room";
-import { Shield, Zap } from "lucide-react";
 import { Ref, useMemo, useState } from "react";
 
 type HistoryDialogProps = {
@@ -102,25 +101,19 @@ export function HistoryDialog({
                   key={entry.key}
                   className="rounded-md border border-gray-600 bg-gray-900/70 p-2"
                 >
-                  <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm">
-                    <div className="min-w-fit font-semibold text-gray-100">{entry.roundLabel}</div>
+                  <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 text-sm">
+                    <div className="text-xs font-semibold text-gray-300">{entry.roundLabel}</div>
                     <div
                       className={`w-20 shrink-0 rounded-full border px-2 py-1 text-center text-xs font-bold ${entry.roleStyle}`}
                     >
                       {entry.roleLabel}
                     </div>
                     <div
-                      className={`inline-flex min-w-fit items-center gap-1 rounded-md border px-2 py-1 ${entry.chairStyle}`}
+                      className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-md border px-2 py-1 ${entry.chairStyle}`}
                     >
-                      {entry.roleLabel === "座った側" ? (
-                        <Shield className="h-4 w-4" />
-                      ) : (
-                        <Zap className="h-4 w-4" />
-                      )}
                       <span className="text-[11px]">椅子</span>
-                      <span className="text-lg font-black leading-none">{entry.chair}</span>
+                      <span className="text-base font-black leading-none">{entry.chair}</span>
                     </div>
-                    <div className="ml-auto" />
                     <div
                       className={`w-20 shrink-0 text-center rounded-full border px-2 py-1 text-xs font-bold ${entry.resultStyle}`}
                     >
