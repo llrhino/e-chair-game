@@ -1,8 +1,7 @@
 import { InfoDialog } from "@/components/dialogs/InfoDialog";
 import { Button } from "@/components/buttons/Button";
 import { TurnHistory } from "@/types/room";
-import { Shield, Target, Zap } from "lucide-react";
-import { Ref } from "react";
+import { Ref, useMemo, useState } from "react";
 
 type HistoryDialogProps = {
   dialogRef: Ref<HTMLDialogElement>;
@@ -11,6 +10,8 @@ type HistoryDialogProps = {
   close: () => void;
   opponentLabel?: string;
 };
+
+type ActiveTab = "self" | "opponent";
 
 function getTurnLabel(turn: TurnHistory["turn"]) {
   return turn === "top" ? "表" : "裏";
@@ -23,6 +24,45 @@ export function HistoryDialog({
   close,
   opponentLabel,
 }: HistoryDialogProps) {
+  const [activeTab, setActiveTab] = useState<ActiveTab>("self");
+  const selfLabel = "自分";
+  const rivalLabel = opponentLabel ?? "相手";
+
+  const entries = useMemo(() => {
+    return history.map((entry, index) => {
+      const isSelfTab = activeTab === "self";
+      const isAttacker = isSelfTab
+        ? entry.attackerId === userId
+        : entry.attackerId !== userId;
+      const didSucceed = isAttacker
+        ? entry.result === "safe"
+        : entry.result === "shocked";
+
+      const chair = isAttacker ? entry.seatedChair : entry.electricChair;
+      const roleLabel = isAttacker ? "座った側" : "仕掛け側";
+      const roleStyle = isAttacker
+        ? "bg-sky-500/20 text-sky-200 border-sky-400/40"
+        : "bg-orange-500/20 text-orange-200 border-orange-400/40";
+      const chairStyle = isAttacker
+        ? "border-sky-500/50 bg-sky-950/40 text-sky-200"
+        : "border-orange-500/50 bg-orange-950/40 text-orange-200";
+      const resultStyle = didSucceed
+        ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
+        : "bg-red-500/20 text-red-300 border-red-400/40";
+
+      return {
+        key: `${entry.roundCount}-${entry.turn}-${index}`,
+        roundLabel: `${entry.roundCount}回 ${getTurnLabel(entry.turn)}`,
+        roleLabel,
+        roleStyle,
+        chair,
+        chairStyle,
+        didSucceed,
+        resultStyle,
+      };
+    });
+  }, [activeTab, history, rivalLabel, userId]);
+
   return (
     <InfoDialog ref={dialogRef} borderColor="border-sky-500">
       <div className="grid gap-4">
@@ -30,72 +70,60 @@ export function HistoryDialog({
         {history.length === 0 ? (
           <p className="text-gray-300">まだ履歴はありません。</p>
         ) : (
-          <ul className="grid gap-2 max-h-[55vh] overflow-y-auto pr-1">
-            {history.map((entry, index) => {
-              const attackerLabel =
-                entry.attackerId === userId ? "自分" : opponentLabel ?? "相手";
-              const seatedLabel =
-                entry.attackerId === userId ? opponentLabel ?? "相手" : "自分";
-              const strategyResult =
-                entry.result === "shocked"
-                  ? "電気を仕掛けた側の作戦成功"
-                  : "座った側の回避成功";
-              return (
+          <>
+            <div className="inline-flex rounded-lg border border-gray-600 p-1 bg-gray-800/70">
+              <button
+                type="button"
+                onClick={() => setActiveTab("self")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  activeTab === "self"
+                    ? "bg-sky-500 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                {selfLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("opponent")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  activeTab === "opponent"
+                    ? "bg-sky-500 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                {rivalLabel}
+              </button>
+            </div>
+            <ul className="grid gap-2 max-h-[55vh] overflow-y-auto pr-1">
+              {entries.map((entry) => (
                 <li
-                  key={`${entry.roundCount}-${entry.turn}-${index}`}
-                  className="rounded-md border border-gray-600 bg-gray-900/70 p-3"
+                  key={entry.key}
+                  className="rounded-md border border-gray-600 bg-gray-900/70 p-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-100">
-                      {entry.roundCount}回 {getTurnLabel(entry.turn)}
+                  <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 text-sm">
+                    <div className="text-xs font-semibold text-gray-300">{entry.roundLabel}</div>
+                    <div
+                      className={`w-20 shrink-0 rounded-full border px-2 py-1 text-center text-xs font-bold ${entry.roleStyle}`}
+                    >
+                      {entry.roleLabel}
                     </div>
                     <div
-                      className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        entry.result === "shocked"
-                          ? "bg-red-500/20 text-red-300"
-                          : "bg-emerald-500/20 text-emerald-300"
-                      }`}
+                      className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-md border px-2 py-1 ${entry.chairStyle}`}
                     >
-                      {strategyResult}
+                      <span className="text-[11px]">椅子</span>
+                      <span className="text-base font-black leading-none">{entry.chair}</span>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                    <div className="rounded border border-orange-400/40 bg-orange-950/30 p-2">
-                      <div className="flex items-center gap-1 text-orange-300 font-semibold">
-                        <Zap className="h-4 w-4" />
-                        電気を仕掛けた側
-                      </div>
-                      <div className="text-white font-bold">{attackerLabel}</div>
-                      <div className="text-gray-300 text-xs mt-1">
-                        狙い: 椅子{entry.electricChair}
-                      </div>
-                    </div>
-                    <div className="rounded border border-sky-400/40 bg-sky-950/30 p-2">
-                      <div className="flex items-center gap-1 text-sky-300 font-semibold">
-                        <Shield className="h-4 w-4" />
-                        座った側
-                      </div>
-                      <div className="text-white font-bold">{seatedLabel}</div>
-                      <div className="text-gray-300 text-xs mt-1">
-                        選択: 椅子{entry.seatedChair}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-300">
-                    <Target className="h-4 w-4 text-gray-400" />
-                    結果:
-                    <span
-                      className={`font-semibold ${
-                        entry.result === "shocked" ? "text-red-400" : "text-emerald-400"
-                      }`}
+                    <div
+                      className={`w-20 shrink-0 text-center rounded-full border px-2 py-1 text-xs font-bold ${entry.resultStyle}`}
                     >
-                      {entry.result === "shocked" ? "感電" : "セーフ"}
-                    </span>
+                      結果: {entry.didSucceed ? "成功" : "失敗"}
+                    </div>
                   </div>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          </>
         )}
         <Button type="button" onClick={close} bgColor="bg-sky-600">
           閉じる
