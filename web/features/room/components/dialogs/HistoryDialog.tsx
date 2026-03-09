@@ -120,8 +120,9 @@ export function HistoryDialog({
                       <span className="text-[11px]">椅子</span>
                       <span className="text-lg font-black leading-none">{entry.chair}</span>
                     </div>
+                    <div className="ml-auto" />
                     <div
-                      className={`min-w-fit rounded-full border px-2 py-1 text-xs font-bold ${entry.resultStyle}`}
+                      className={`w-20 shrink-0 text-center rounded-full border px-2 py-1 text-xs font-bold ${entry.resultStyle}`}
                     >
                       結果: {entry.didSucceed ? "成功" : "失敗"}
                     </div>
