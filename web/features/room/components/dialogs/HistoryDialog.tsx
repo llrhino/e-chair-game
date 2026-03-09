@@ -40,7 +40,7 @@ export function HistoryDialog({
         : entry.result === "shocked";
 
       const chair = isAttacker ? entry.seatedChair : entry.electricChair;
-      const roleLabel = isAttacker ? "座った側" : "仕掛けた側";
+      const roleLabel = isAttacker ? "座った側" : "仕掛け側";
       const roleStyle = isAttacker
         ? "bg-sky-500/20 text-sky-200 border-sky-400/40"
         : "bg-orange-500/20 text-orange-200 border-orange-400/40";
@@ -105,7 +105,7 @@ export function HistoryDialog({
                   <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm">
                     <div className="min-w-fit font-semibold text-gray-100">{entry.roundLabel}</div>
                     <div
-                      className={`min-w-fit rounded-full border px-2 py-1 text-xs font-bold ${entry.roleStyle}`}
+                      className={`w-20 shrink-0 rounded-full border px-2 py-1 text-center text-xs font-bold ${entry.roleStyle}`}
                     >
                       {entry.roleLabel}
                     </div>
